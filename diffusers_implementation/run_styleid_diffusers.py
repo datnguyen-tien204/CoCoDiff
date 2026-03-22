@@ -12,6 +12,12 @@ from tqdm import tqdm
 
 from config import get_args
 
+def resize_image(image, target_size=384):
+    h, w = image.shape[:2]
+    if h == target_size and w == target_size:
+        return image
+    return cv2.resize(image, (target_size, target_size), interpolation=cv2.INTER_AREA)
+
 # class for obtain and override the features
 class style_transfer_module():
            
@@ -220,6 +226,8 @@ if __name__ == "__main__":
     save_dir = cfg.save_dir
     style_image = cv2.imread(cfg.sty_fn)[:, :, ::-1]
     content_image = cv2.imread(cfg.cnt_fn)[:, :, ::-1]
+    style_image = resize_image(style_image, target_size=384)
+    content_image = resize_image(content_image, target_size=384)
     
     os.makedirs(save_dir, exist_ok=True)
     os.makedirs(save_dir + '', exist_ok=True)
