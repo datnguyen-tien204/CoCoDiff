@@ -66,10 +66,10 @@ class style_transfer_module():
         
     def get_text_condition(self, text):
         if text is None:
-            uncond_input = tokenizer(
-                [""], padding="max_length", max_length=tokenizer.model_max_length, return_tensors="pt"
+            uncond_input = self.tokenizer(
+                [""], padding="max_length", max_length=self.tokenizer.model_max_length, return_tensors="pt"
             )
-            uncond_embeddings = text_encoder(uncond_input.input_ids.to(device))[0].to(device)
+            uncond_embeddings = self.text_encoder(uncond_input.input_ids.to(self.unet.device))[0].to(self.unet.device)
             return {'encoder_hidden_states': uncond_embeddings}
         
         text_embeddings, uncond_embeddings = get_text_embedding(text, self.text_encoder, self.tokenizer)
