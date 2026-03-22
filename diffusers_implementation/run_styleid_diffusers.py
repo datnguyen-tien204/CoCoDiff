@@ -81,11 +81,11 @@ class style_transfer_module():
         }
         return denoise_kwargs
     
-    def reverse_process(self, input, denoise_kwargs):
+    def reverse_process(self, input, denoise_kwargs, guidance_scale=0.):
         pred_images = []
         pred_latents = []
         
-        decode_kwargs = {'vae': vae}
+        decode_kwargs = {'vae': self.vae}
         
         # Reverse diffusion process
         for t in tqdm(self.scheduler.timesteps):
@@ -100,7 +100,7 @@ class style_transfer_module():
                     bs = denoise_kwargs['encoder_hidden_states'].shape[0]
                     input = torch.cat([input] * bs)
                 
-                noisy_residual = unet_wrapper.unet(input, t.to(input.device), **denoise_kwargs).sample
+                noisy_residual = self.unet(input, t.to(input.device), **denoise_kwargs).sample
                     
                 # For text condition on stable diffusion
                 if noisy_residual.shape[0] == 2:
@@ -109,8 +109,8 @@ class style_transfer_module():
                     noisy_residual = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
                     input, _ = input.chunk(2)
 
-                prev_noisy_sample = scheduler.step(noisy_residual, t, input).prev_sample                # coef * P_t(e_t(x_t)) + D_t(e_t(x_t))
-                pred_original_sample = scheduler.step(noisy_residual, t, input).pred_original_sample    # D_t(e_t(x_t))
+                prev_noisy_sample = self.scheduler.step(noisy_residual, t, input).prev_sample                # coef * P_t(e_t(x_t)) + D_t(e_t(x_t))
+                pred_original_sample = self.scheduler.step(noisy_residual, t, input).pred_original_sample    # D_t(e_t(x_t))
                 
                 input = prev_noisy_sample
                 
@@ -121,12 +121,12 @@ class style_transfer_module():
         
             
     ## Inversion (https://github.com/huggingface/diffusion-models-class/blob/main/unit4/01_ddim_inversion.ipynb)
-    def invert_process(self, input, denoise_kwargs):
+    def invert_process(self, input, denoise_kwargs, guidance_scale=0.):
 
         pred_images = []
         pred_latents = []
         
-        decode_kwargs = {'vae': vae}
+        decode_kwargs = {'vae': self.vae}
 
         # Reversed timesteps <<<<<<<<<<<<<<<<<<<<
         timesteps = reversed(self.scheduler.timesteps)
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     # Set modify features
     for layer_name in style_features.keys():
         unet_wrapper.attn_features_modify[layer_name] = {}
-        for t in scheduler.timesteps:
+        for t in unet_wrapper.scheduler.timesteps:
             t = t.item()
             unet_wrapper.attn_features_modify[layer_name][t] = (content_features[layer_name][t][0], style_features[layer_name][t][1], style_features[layer_name][t][2]) # content as q / style as kv        
     # =============================================
