@@ -94,7 +94,7 @@ class style_transfer_module():
         decode_kwargs = {'vae': self.vae}
         
         # Reverse diffusion process
-        for t in tqdm(self.scheduler.timesteps):
+        for t in tqdm(self.scheduler.timesteps, disable=True):
             
             # setting t (for saving time step)
             self.cur_t = t.item()
@@ -140,7 +140,7 @@ class style_transfer_module():
         cur_latent = input.clone()
 
         with torch.no_grad():
-            for i in tqdm(range(0, num_inference_steps)):
+            for i in tqdm(range(0, num_inference_steps), disable=True):
 
                 t = timesteps[i]
                 
